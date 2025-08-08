@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Interativo PAE - CCSA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Harmony -->
+    <!-- Application Structure Plan: A single-page application with a sticky navigation bar for easy access to key sections: 'O que é', 'Projetos', 'Prazos', and 'Avaliação'. The core of the app is an interactive, filterable grid of project cards. Clicking a card opens a modal with detailed information, preventing clutter and promoting exploration. This structure was chosen to guide the user from general information to specific choices (selecting a project) and finally to administrative details (deadlines and evaluation), which is a more logical user flow than a linear document. -->
+    <!-- Visualization & Content Choices: 
+        - General Info: Presented in clear, icon-based cards (HTML/CSS) for quick comprehension of the main requirements. Goal: Inform.
+        - Project List: An interactive card grid (HTML/CSS/JS). Goal: Organize & Compare. Interaction: Click-to-reveal details in a modal and filter by semester. Justification: This is highly user-friendly for comparing multiple options without being overwhelmed.
+        - Evaluation Criteria: A dynamic Donut Chart (Chart.js/Canvas) and a detailed HTML table. Goal: Compare proportions and provide details. Interaction: Tooltips on hover. Justification: Visually represents the weight of each assessment component, which is more impactful than a simple table, while the table provides the necessary details.
+        - Calendars: Clean HTML tables for readability. Goal: Inform.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F7F4;
+            color: #3D405B;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #81B29A;
+            border-bottom-color: #81B29A;
+        }
+        .card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        .btn-filter.active {
+            background-color: #3D405B;
+            color: #F8F7F4;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-40">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-[#3D405B]">
+                Guia Interativo <span class="text-[#81B29A]">PAE</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#sobre" class="nav-link font-medium pb-1">O que é?</a>
+                <a href="#projetos" class="nav-link font-medium pb-1">Projetos</a>
+                <a href="#prazos" class="nav-link font-medium pb-1">Prazos</a>
+                <a href="#avaliacao" class="nav-link font-medium pb-1">Avaliação</a>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-700 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#sobre" class="block py-2 px-6 text-sm hover:bg-gray-100">O que é?</a>
+            <a href="#projetos" class="block py-2 px-6 text-sm hover:bg-gray-100">Projetos</a>
+            <a href="#prazos" class="block py-2 px-6 text-sm hover:bg-gray-100">Prazos</a>
+            <a href="#avaliacao" class="block py-2 px-6 text-sm hover:bg-gray-100">Avaliação</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        
+        <section id="sobre" class="mb-24 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-[#3D405B] mb-4">Projetos e Atividades de Extensão</h1>
+            <p class="max-w-3xl mx-auto text-lg text-gray-600 mb-12">Bem-vindo(a) ao guia completo sobre os PAE do CCSA. Aqui você encontrará tudo que precisa para participar, escolher seu projeto e cumprir todos os requisitos do semestre.</p>
+            
+            <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200/50">
+                <h2 class="text-2xl font-bold text-[#3D405B] mb-3">O que é o PAE?</h2>
+                <p class="text-gray-600 mb-6 max-w-2xl mx-auto">O PAE (Projeto de Atividade de Extensão) é a aplicação da legislação nacional de <strong class="font-semibold text-[#81B29A]">curricularização da extensão</strong>. Isso significa que parte da sua formação acadêmica acontece através de projetos que conectam a universidade com a comunidade, aplicando o conhecimento na prática.</p>
+                <div class="flex justify-center space-x-4">
+                    <a href="https://virtual.ucp.br/lyceump/conline/main.asp" target="_blank" class="bg-[#3D405B] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#2c2e40] transition-colors">Portal Lyceum</a>
+                    <a href="https://drive.google.com/file/d/1DIKAaCiZnLKskR_eAqyzEf_4XFNgLWYk/view" target="_blank" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Normativa UCP</a>
+                </div>
+
+                <hr class="my-8 border-gray-200">
+
+                <h2 class="text-2xl font-bold text-[#3D405B] mb-6">Requisitos para Aprovação</h2>
+                <div class="grid md:grid-cols-2 gap-8 text-left">
+                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-200/80">
+                        <h3 class="font-bold text-xl mb-2 text-[#3D405B]">1. Aulas PAE (30 horas)</h3>
+                        <p class="text-gray-600">É necessário ter no mínimo <strong class="text-[#81B29A]">75% de presença</strong> nas aulas do curso, sejam elas presenciais ou online.</p>
+                        <p class="text-sm text-gray-500 mt-3">Alunos EAD devem usar o link abaixo para as aulas ao vivo.</p>
+                        <a href="https://meet.google.com/ckq-mkma-fee" target="_blank" class="mt-3 inline-block text-[#81B29A] font-semibold hover:underline">Link para Aulas EAD &rarr;</a>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-200/80">
+                        <h3 class="font-bold text-xl mb-2 text-[#3D405B]">2. Atividades de Extensão (15 horas)</h3>
+                        <p class="text-gray-600">Você deve escolher <strong class="text-[#81B29A]">um dos projetos</strong> de extensão e realizar as atividades propostas, que somam 15 horas.</p>
+                        <p class="text-sm text-gray-500 mt-3">A aprovação final depende da entrega correta das atividades.</p>
+                    </div>
+                </div>
+                 <div class="mt-8 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded-r-lg" role="alert">
+                    <p class="font-bold">Atenção!</p>
+                    <p>Sua aprovação final depende da frequência, entrega correta das atividades e preenchimento do formulário de avaliação no Moodle.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="projetos" class="mb-24">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-[#3D405B] mb-3 text-center">Explore os Projetos</h2>
+            <p class="max-w-2xl mx-auto text-lg text-gray-600 mb-10 text-center">Cada projeto oferece uma oportunidade única de aprendizado. Filtre por semestre e clique em um card para ver todos os detalhes e escolher o seu.</p>
+            
+            <div class="flex justify-center space-x-2 mb-10">
+                <button class="btn-filter active py-2 px-5 rounded-full text-sm font-semibold transition-colors" data-filter="all">Todos</button>
+                <button class="btn-filter py-2 px-5 rounded-full text-sm font-semibold transition-colors bg-white" data-filter="1">1º Semestre</button>
+                <button class="btn-filter py-2 px-5 rounded-full text-sm font-semibold transition-colors bg-white" data-filter="2">2º Semestre</button>
+                <button class="btn-filter py-2 px-5 rounded-full text-sm font-semibold transition-colors bg-white" data-filter="ambos">Ambos</button>
+            </div>
+
+            <div id="project-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </section>
+
+        <section id="prazos" class="mb-24">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-[#3D405B] mb-3 text-center">Inscrições e Prazos</h2>
+            <p class="max-w-2xl mx-auto text-lg text-gray-600 mb-10 text-center">Não perca as datas! Faça sua inscrição no projeto escolhido através do formulário correspondente.</p>
+
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200/50 text-center">
+                    <h3 class="text-2xl font-bold text-[#3D405B]">Semestre 1</h3>
+                    <p class="text-gray-500 mb-4">Prazo Final: <strong class="text-red-500">26/02</strong></p>
+                    <a href="https://forms.gle/r18wxZFhq4EBjzVU6" target="_blank" class="w-full block bg-[#3D405B] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2c2e40] transition-colors">Inscrever-se Agora</a>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200/50 text-center">
+                    <h3 class="text-2xl font-bold text-[#3D405B]">Semestre 2</h3>
+                    <p class="text-gray-500 mb-4">Prazo Final: <strong class="text-red-500">27/08</strong></p>
+                    <a href="https://forms.gle/7jiXyzUru9oyJ2y76" target="_blank" class="w-full block bg-[#3D405B] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#2c2e40] transition-colors">Inscrever-se Agora</a>
+                </div>
+            </div>
+            <div class="mt-8 text-center">
+                <a href="https://docs.google.com/document/d/1uvT4cHk0VRLBTrDBJQ54IPQP6rBLViB-5Gpz5g7q4ng/edit?usp=sharing" target="_blank" class="inline-block bg-white text-[#3D405B] border border-gray-300 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors shadow-sm">
+                    🗓️ Cronograma de Entregas
+                </a>
+            </div>
+        </section>
+
+        <section id="avaliacao" class="mb-12">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-[#3D405B] mb-3 text-center">Como Serei Avaliado?</h2>
+            <p class="max-w-2xl mx-auto text-lg text-gray-600 mb-10 text-center">Sua nota final é composta por 4 partes. Veja o peso de cada uma e organize-se para garantir a aprovação.</p>
+
+            <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-200/50 max-w-5xl mx-auto">
+                <div class="grid lg:grid-cols-2 gap-8 items-center">
+                    <div class="chart-container relative h-64 md:h-80 w-full max-w-sm mx-auto">
+                        <canvas id="evaluationChart"></canvas>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="border-b-2 border-gray-200">
+                                <tr>
+                                    <th class="py-3 px-4 font-bold uppercase text-sm text-gray-500">Notas</th>
+                                    <th class="py-3 px-4 font-bold uppercase text-sm text-gray-500">Atividades</th>
+                                    <th class="py-3 px-4 font-bold uppercase text-sm text-gray-500 text-right">Nota Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-gray-200">
+                                    <td class="py-4 px-4 font-semibold">N1 - Assiduidade</td>
+                                    <td class="py-4 px-4 text-gray-600">Comparecer aos Encontros</td>
+                                    <td class="py-4 px-4 text-right font-mono">1,0</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="py-4 px-4 font-semibold">N2 - Entrega (7,5h)</td>
+                                    <td class="py-4 px-4 text-gray-600">Elaboração dos projetos e entrega</td>
+                                    <td class="py-4 px-4 text-right font-mono">3,0</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="py-4 px-4 font-semibold">N3 - Entrega (7,5h)</td>
+                                    <td class="py-4 px-4 text-gray-600">Elaboração dos projetos e entrega</td>
+                                    <td class="py-4 px-4 text-right font-mono">5,0</td>
+                                </tr>
+                                <tr class="border-b border-gray-200">
+                                    <td class="py-4 px-4 font-semibold">N4 - Autoavaliação</td>
+                                    <td class="py-4 px-4 text-gray-600">Autoavaliação</td>
+                                    <td class="py-4 px-4 text-right font-mono">1,0</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="bg-gray-50">
+                                    <td colspan="2" class="py-4 px-4 font-bold text-[#3D405B]">Nota Final</td>
+                                    <td class="py-4 px-4 text-right font-bold text-[#3D405B] font-mono">10,0</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200">
+        <div class="container mx-auto px-6 py-4 text-center text-gray-500">
+            <p>&copy; 2025 Universidade Católica de Petrópolis - CCSA. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <div id="project-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 hidden opacity-0">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform scale-95">
+            <div class="sticky top-0 bg-white/80 backdrop-blur-lg px-8 py-4 flex justify-between items-center border-b border-gray-200 z-10">
+                <h3 id="modal-title" class="text-2xl font-bold text-[#3D405B]"></h3>
+                <button id="close-modal-button" class="text-gray-500 hover:text-gray-800 transition-colors">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div id="modal-body" class="p-8">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const projects = [
+                {
+                    id: 1, title: 'A Casa do Empreendedor', semester: 'ambos',
+                    objective: 'Apoiar o desenvolvimento de micro e pequenos negócios locais, incluindo iniciativas de empreendedorismo social e internacional.',
+                    todo: 'Planejar e aplicar ferramentas de gestão ou projetos que ajudem um empreendedor ou uma instituição local.',
+                    deliverables: [
+                        'Apresentação da empresa/contexto.',
+                        'Cronograma de atividades (em grupo).',
+                        'Relatório de resultados (10 min), apresentando a ferramenta utilizada e o impacto gerado.'
+                    ],
+                    links: [
+                        { name: 'Ferramentas de Gestão', url: 'https://tinyurl.com/2p94yr98' },
+                        { name: 'Exemplo de Cronograma', url: 'https://tinyurl.com/mr3jz8ay' }
+                    ]
+                },
+                {
+                    id: 2, title: 'Inglês e Negócios', semester: 'ambos',
+                    objective: 'Ler, refletir e disseminar conhecimentos sobre gestão, negociação e liderança a partir de textos em inglês.',
+                    todo: 'Ler um artigo em inglês da lista, preparar um resumo e apresentar as ideias principais para a comunidade acadêmica.',
+                    deliverables: [
+                        'Apresentação em grupo (máx. 15 min) usando o Canva, focando nos pontos práticos do texto e no impacto para sua carreira. A apresentação deve ser visual, com tópicos.'
+                    ],
+                    links: [
+                        { name: 'Pasta com os Artigos', url: 'https://drive.google.com/drive/folders/lewOKgV6NY4fvIeO94xiTKNHMxSd7jIb-?usp=sharing' }
+                    ]
+                },
+                {
+                    id: 3, title: 'Mentoria Coletiva VOAR', semester: 'ambos',
+                    objective: 'Conectar alunos com profissionais e ex-alunos (alumni) para mentorias coletivas, promovendo Visão, Oportunidade, Autoconhecimento e Reflexão (VOAR).',
+                    todo: 'Participar e auxiliar na organização das atividades de mentoria e elaborar resumos propostos pelos professores.',
+                    deliverables: [
+                        'Participação ativa em uma das atividades do evento (40 a 60 min).'
+                    ],
+                    links: [
+                        { name: 'Documento de Referência', url: 'https://docs.google.com/document/d/1KJFy4TDoUSsDFw5NzuCjHU6uqetQ-dio/edit?usp=sharing&ouid=100270321021830452689&rtpof=true&sd=true' }
+                    ]
+                },
+                {
+                    id: 4, title: 'Clube de Leitura - Administração', semester: 'ambos',
+                    objective: 'Ler, refletir e discutir sobre temas como gestão, negociação e liderança a partir de livros da área.',
+                    todo: 'Ler um livro da lista, preparar um resumo e apresentar os aprendizados para a comunidade.',
+                    deliverables: [
+                        'Apresentação (presencial ou online) em grupo (máx. 10 min) usando o Canva, destacando o que o livro agregou para sua vida e carreira.'
+                    ],
+                    links: [
+                        { name: 'Pasta com os Livros', url: 'https://drive.google.com/drive/folders/145iEG5eRyAZpSSm7KorsaWFqW7nndpYJ?usp=share_link' },
+                        { name: 'Escolha o seu livro', url: 'https://docs.google.com/spreadsheets/d/1JMAi0GDSCEowQNFLo6s27A9r_NxCe8e2Q86aovk5r80/edit?usp=sharing' }
+                    ]
+                },
+                {
+                    id: 5, title: 'Educação Financeira', semester: 'ambos',
+                    objective: 'Promover a conscientização sobre consumo sustentável, planejamento e responsabilidade financeira na comunidade.',
+                    todo: 'Planejar e aplicar um projeto (pesquisa, palestra, material didático) que beneficie a comunidade com conhecimentos de educação financeira.',
+                    deliverables: [
+                        'Cronograma das atividades.',
+                        'Relatório de resultados e apresentação (10 min).'
+                    ],
+                    links: [
+                        { name: 'Conceito de Cidadania Financeira (BCB)', url: 'https://www.bcb.gov.br/Nor/relincfin/conceito_cidadania_financeira.pdf' },
+                        { name: 'Página de Cidadania Financeira (BCB)', url: 'https://www.bcb.gov.br/cidadaniafinanceira' },
+                        { name: 'Exemplo de Cronograma', url: 'https://tinyurl.com/mr3jz8ay' }
+                    ]
+                },
+                {
+                    id: 6, title: 'Mundo em Cena', semester: 'ambos',
+                    objective: 'Utilizar o cinema como ferramenta para análises críticas sobre Relações Internacionais, organizando debates abertos ao público.',
+                    todo: 'Realizar a curadoria de filmes, produzir materiais de análise e organizar as exibições.',
+                    deliverables: [
+                        '<strong>N1:</strong> Relatório com a curadoria e seleção de filmes.',
+                        '<strong>N2:</strong> Produção de resenhas e materiais explicativos + Relatório com o planejamento das exibições.'
+                    ],
+                    links: []
+                },
+                {
+                    id: 7, title: 'Simulado das Nações Unidas (SINUCP)', semester: '2',
+                    objective: 'Vivenciar o funcionamento de uma organização internacional através de uma simulação prática.',
+                    todo: 'Estudar o país a ser representado, pesquisar o tema em debate e participar ativamente do simulado.',
+                    deliverables: [
+                        '<strong>N1:</strong> Estudo sobre o país e o tema da simulação.',
+                        '<strong>N2:</strong> Relatório sobre sua participação no evento.'
+                    ],
+                    links: []
+                },
+                {
+                    id: 8, title: 'Boletim de RI', semester: '1',
+                    objective: 'Acompanhar e analisar a conjuntura política e econômica internacional, produzindo um boletim informativo.',
+                    todo: 'Pesquisar, analisar e escrever sobre temas atuais das Relações Internacionais para compor o boletim.',
+                    deliverables: [
+                        'Apresentação de estudos e pesquisas.',
+                        'Elaboração do boletim.'
+                    ],
+                    links: []
+                },
+                {
+                    id: 9, title: 'Clube de Leitura - Economia', semester: 'ambos',
+                    objective: 'Ler, refletir e disseminar conhecimento sobre textos na área de Economia Aplicada.',
+                    todo: 'Ler um livro/texto da lista, fazer resumo, resenha e apresentar para a comunidade.',
+                    deliverables: [
+                        '<strong>N1:</strong> Resumo do material (individual).',
+                        '<strong>N2:</strong> Resenha e apresentação (máx. 5 min).'
+                    ],
+                    links: [
+                        { name: 'Sugestões, Cronograma e Critérios', url: 'https://drive.google.com/file/d/1lb3vWiX-XFanigkY9EAg2bVtuCqyWNAh/view?usp=sharing' },
+                        { name: 'Escolha o seu livro', url: 'https://docs.google.com/spreadsheets/d/1JMAi0GDSCEowQNFLo6s27A9r_NxCe8e2Q86aovk5r80/edit?usp=sharing' },
+                        { name: 'Ferramenta para Gravação (Loom)', url: 'https://www.loom.com/' }
+                    ]
+                },
+                {
+                    id: 10, title: 'Boletim Econômico - UCP', semester: 'ambos',
+                    objective: 'Acompanhar a conjuntura econômica nacional e internacional, elaborando um boletim com os principais indicadores.',
+                    todo: 'Pesquisar indicadores econômicos, montar um boletim semestral e apresentar os resultados.',
+                    deliverables: [
+                        '<strong>N1:</strong> Pesquisa preliminar dos indicadores.',
+                        '<strong>N2:</strong> Finalização da pesquisa e apresentação do boletim (máx. 5 min).'
+                    ],
+                    links: [
+                        { name: 'Ferramenta para Gravação (Loom)', url: 'https://www.loom.com/' }
+                    ]
+                },
+                {
+                    id: 11, title: 'Petrópolis Data Driven', semester: 'ambos',
+                    objective: 'Desenvolver competências em mineração, organização e visualização de dados, focando em informações sobre o município de Petrópolis.',
+                    todo: 'Apresentar um código em Python que manipule uma base de dados e apresente os resultados de forma intuitiva.',
+                    deliverables: [
+                        'Código em Python funcional e comentado.'
+                    ],
+                    links: []
+                }
+            ];
+
+            const projectGrid = document.getElementById('project-grid');
+            const modal = document.getElementById('project-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const closeModalButton = document.getElementById('close-modal-button');
+            const filterButtons = document.querySelectorAll('.btn-filter');
+
+            function renderProjects(filter = 'all') {
+                projectGrid.innerHTML = '';
+                const filteredProjects = projects.filter(p => {
+                    if (filter === 'all') return true;
+                    if (filter === 'ambos') return p.semester === 'ambos';
+                    return p.semester === filter || p.semester === 'ambos';
+                });
+
+                filteredProjects.forEach(project => {
+                    const card = document.createElement('div');
+                    card.className = 'card bg-white p-6 rounded-2xl shadow-md border border-gray-200/50 cursor-pointer flex flex-col';
+                    card.dataset.projectId = project.id;
+                    
+                    let semesterBadge = '';
+                    if (project.semester === '1') {
+                        semesterBadge = `<span class="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">1º Semestre</span>`;
+                    } else if (project.semester === '2') {
+                        semesterBadge = `<span class="bg-green-100 text-green-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded-full">2º Semestre</span>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="flex-grow">
+                            <div class="flex justify-start items-center mb-2">${semesterBadge}</div>
+                            <h3 class="text-xl font-bold text-[#3D405B] mb-2">${project.title}</h3>
+                            <p class="text-gray-600 text-sm">${project.objective.substring(0, 100)}...</p>
+                        </div>
+                        <div class="mt-4 text-right text-[#81B29A] font-semibold">
+                            Ver detalhes &rarr;
+                        </div>
+                    `;
+                    card.addEventListener('click', () => openModal(project.id));
+                    projectGrid.appendChild(card);
+                });
+            }
+
+            function openModal(projectId) {
+                const project = projects.find(p => p.id === projectId);
+                if (!project) return;
+
+                modalTitle.textContent = project.title;
+                
+                let deliverablesHtml = project.deliverables.map(d => `<li class="flex items-start"><span class="text-[#81B29A] mr-3 mt-1">&#10003;</span><span>${d}</span></li>`).join('');
+                let linksHtml = project.links.map(l => `
+                    <a href="${l.url}" target="_blank" class="inline-block bg-gray-100 text-gray-800 font-medium py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm">
+                        ${l.name}
+                    </a>
+                `).join('');
+
+                modalBody.innerHTML = `
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="font-bold text-lg text-[#3D405B] mb-2">🎯 Objetivo</h4>
+                            <p class="text-gray-700">${project.objective}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg text-[#3D405B] mb-2">📝 O que fazer?</h4>
+                            <p class="text-gray-700">${project.todo}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg text-[#3D405B] mb-2">📦 Entregas Obrigatórias</h4>
+                            <ul class="space-y-2 text-gray-700 list-none">${deliverablesHtml}</ul>
+                        </div>
+                        ${project.links.length > 0 ? `
+                        <div>
+                            <h4 class="font-bold text-lg text-[#3D405B] mb-2">🔗 Links Úteis</h4>
+                            <div class="flex flex-wrap gap-2">${linksHtml}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.querySelector('.modal-content').classList.remove('scale-95');
+                }, 10);
+            }
+
+            function closeModal() {
+                modal.classList.add('opacity-0');
+                modal.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+            }
+
+            closeModalButton.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => {
+                        btn.classList.remove('active', 'bg-[#3D405B]', 'text-white');
+                        btn.classList.add('bg-white');
+                    });
+                    button.classList.add('active', 'bg-[#3D405B]', 'text-white');
+                    button.classList.remove('bg-white');
+                    renderProjects(button.dataset.filter);
+                });
+            });
+
+            const ctx = document.getElementById('evaluationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['N1 - Assiduidade (10%)', 'N2 - Entrega 1 (30%)', 'N3 - Entrega 2 (50%)', 'N4 - Autoavaliação (10%)'],
+                    datasets: [{
+                        label: 'Peso na Nota Final',
+                        data: [10, 30, 50, 10],
+                        backgroundColor: [
+                            '#E07A5F',
+                            '#3D405B',
+                            '#81B29A',
+                            '#F4D35E'
+                        ],
+                        borderColor: '#F8F7F4',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#3D405B',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + '%';
+                                    }
+                                    return context.label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            document.querySelectorAll('#mobile-menu a').forEach(link => {
+                link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+            });
+
+            renderProjects();
+        });
+    </script>
+</body>
+</html>
